@@ -1,0 +1,3 @@
+[submodule "dag_generator"]
+	path = dag_generator
+	url = https://github.com/Nan-Do/dag_generator.git
