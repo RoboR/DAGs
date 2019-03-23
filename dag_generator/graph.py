@@ -33,7 +33,7 @@ A GraphLink is a tuple of two Positions the first one being the origin of the
 link and the second the end of the link.
 """
 Position = namedtuple('Position', ['level', 'block', 'position'])
-GraphLink = namedtuple('GraphLink', ['orig', 'dest'])
+GraphLink = namedtuple('GraphLink', ['orig', 'dest', 'cost'])
 
 
 class Graph:
@@ -49,7 +49,7 @@ class Graph:
         all_nodes = set()
         children = set()
         for link in self.treelinks:
-            orig, dest = link
+            orig, dest, cost = link
             orig_node = self.treelevels[orig.level][orig.block][orig.position]
             dest_node = self.treelevels[dest.level][dest.block][dest.position]
             
@@ -237,7 +237,7 @@ class Graph:
         Generate links for the current graph that create a tree.
 
         This function generates the tree_links that will populate
-        the links of the grapg. The class works in an incremental
+        the links of the graph. The class works in an incremental
         fashion, first the links to create a graph are generated
         and then the tree is turned into a DAG.
         """
@@ -248,7 +248,7 @@ class Graph:
         for block, b in enumerate(self.treelevels[1]):
             for position, x in enumerate(b):
                 dest = Position(1, block, position)
-                tree_links.append(GraphLink(root, dest))
+                tree_links.append(GraphLink(root, dest, 0))
 
         for level, (x, y) in enumerate(get_chunks(self.treelevels[1:], 2),
                                        start=1):
@@ -269,7 +269,8 @@ class Graph:
                                              dest_block,
                                              dest_position)
                     tree_links.append(GraphLink(orig_position,
-                                                dest_position))
+                                                dest_position,
+                                                0))
 
         return tree_links
 
@@ -308,7 +309,8 @@ class Graph:
                                             source_position),
                                    Position(dest_level,
                                             dest_block,
-                                            dest_position))
+                                            dest_position),
+                                   0)
             # Check that the link doestn't exist already
             if graph_link in self.treelinks:
                 continue
@@ -361,12 +363,13 @@ class Graph:
             f.write(str(self.treelevels))
             f.write('\n')
             f.write('\tLinks: ')
-            links_str = ';'.join(map(lambda x: '({},{},{})|({},{},{})'.format(x.orig.level,
-                                                                              x.orig.block,
-                                                                              x.orig.position,
-                                                                              x.dest.level,
-                                                                              x.dest.block,
-                                                                              x.dest.position),
+            links_str = ';'.join(map(lambda x: '({},{},{})|({},{},{})|({})'.format(x.orig.level,
+                                                                                 x.orig.block,
+                                                                                 x.orig.position,
+                                                                                 x.dest.level,
+                                                                                 x.dest.block,
+                                                                                 x.dest.position,
+                                                                                 x.cost),
                                      self.treelinks))
             f.write(links_str)
             f.write('\n')
@@ -381,7 +384,7 @@ class Graph:
         """
         g = defaultdict(list)
 
-        for (orig_position, dest_position) in self.treelinks:
+        for (orig_position, dest_position, cost) in self.treelinks:
             level, block, position = orig_position
             orig_node = self.treelevels[level][block][position]
 
@@ -435,15 +438,17 @@ class Graph:
         self.nodeCost = ast.literal_eval(node_costs)
         self.treelevels = ast.literal_eval(levels)
         for link in links.split(';'):
-            orig, dest = link.split('|')
+            orig, dest, cost = link.split('|')
             orig = map(int, orig[1:-1].split(','))
             dest = map(int, dest[1:-1].split(','))
+            cost = int(cost[1:-1])
             l = GraphLink(Position(orig[0],
                                    orig[1],
                                    orig[2]),
                           Position(dest[0],
                                    dest[1],
-                                   dest[2]))
+                                   dest[2]),
+                          cost)
             self.treelinks.append(l)
 
     def __populate_randomly(self, TreeConfig):
@@ -510,6 +515,15 @@ class Graph:
 
         if dag_density != "none":
             self.__generate_dag(num_of_dag_links)
+
+        # Add Link cost
+        tempTreeLinks = self.treelinks
+        self.treelinks = list()
+        for i in range(len(tempTreeLinks)):
+            self.treelinks.append(GraphLink(tempTreeLinks[i].orig,
+                                            tempTreeLinks[i].dest,
+                                            randint(TreeConfig.min_link_cost, TreeConfig.max_link_cost)))
+
 
     def __init__(self, GraphConfig):
         # Data to to represent the graph

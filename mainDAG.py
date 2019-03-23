@@ -6,7 +6,7 @@ from DAG import DAG
 
 if __name__ == '__main__':
     print('Start DAG')
-    load_graph = 'output/graph-ZRwf-representation.txt'
+    load_graph = 'output/graph-xT7i-representation.txt'
     outputDirectory = 'output'
     processorCount = 3
     minNodeCost = 10
@@ -26,12 +26,11 @@ if __name__ == '__main__':
                              processorCount, minNodeCost, maxNodeCost,
                              minLinkCost, maxLinkCost)
 
-    readGraph = DAG(loadConfig)
     # writeGraph = DAG(writeConfig)
+    readGraph = DAG(loadConfig)
 
-    # print(writeGraph.nodes)
-    # print(writeGraph.nodeCost)
-
-    print(readGraph.nodes)
-    print(type(readGraph.nodeCost))
-    print(readGraph.nodeCost)
+    print('ID: ', readGraph.id)
+    print('NODES', readGraph.nodes)
+    print('NODE COSTS', readGraph.nodeCost)
+    print('LEVELS', readGraph.treelevels)
+    print('LINKS', readGraph.treelinks)
