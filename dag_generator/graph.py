@@ -18,7 +18,11 @@ GraphConfig = namedtuple("GraphConfig", ["populate_randomly",
                                          "use_lowercase",
                                          "file_name",
                                          "output_directory",
-                                         "processor_count"])
+                                         "processor_count",
+                                         "min_node_cost",
+                                         "max_node_cost",
+                                         "min_link_cost",
+                                         "max_link_cost"])
 
 """
 Datatypes to represent the links of the graph, a position is a tuple of three
@@ -350,6 +354,9 @@ class Graph:
             f.write('\tNodes: ')
             f.write(str(self.nodes))
             f.write('\n')
+            f.write('\tNodeCosts: ')
+            f.write(str(self.nodeCost))
+            f.write('\n')
             f.write('\tLevels: ')
             f.write(str(self.treelevels))
             f.write('\n')
@@ -419,11 +426,13 @@ class Graph:
             f.readline()
             g_id = f.readline().split(':')[1].strip()
             nodes = f.readline().split(':')[1].strip()
+            node_costs = f.readline().split('NodeCosts:')[1].strip()
             levels = f.readline().split(':')[1].strip()
             links = f.readline().split(':')[1].strip()
 
-        self.id = int(g_id)
+        self.id = str(g_id)
         self.nodes = ast.literal_eval(nodes)
+        self.nodeCost = ast.literal_eval(node_costs)
         self.treelevels = ast.literal_eval(levels)
         for link in links.split(';'):
             orig, dest = link.split('|')
@@ -462,6 +471,11 @@ class Graph:
                                                    num_of_lists,
                                                    outdegree)
         self.nodes = (root,) + tuple(chain.from_iterable(lists_of_nodes))
+        self.nodeCost = dict.fromkeys(node for node in self.nodes)
+        for node in self.nodes:
+            self.nodeCost[node] = tuple(randint(TreeConfig.min_node_cost, TreeConfig.max_node_cost)
+                                                   for procCount in range(TreeConfig.processor_count))
+
         if DEBUG:
             number_of_nodes = len(self.nodes)
             print "Number of nodes for the graph:", number_of_nodes, '/', size
@@ -499,7 +513,7 @@ class Graph:
 
     def __init__(self, GraphConfig):
         # Data to to represent the graph
-        self.nodes = self.treelevels = self.treelinks = self.id = None
+        self.nodes = self.treelevels = self.treelinks = self.id = self.nodeCost = None
         self.output_directory = GraphConfig.output_directory
         # If you copy the graph (with deepcopy) to be mutated set this
         # variable to True to generate the filenames correctly

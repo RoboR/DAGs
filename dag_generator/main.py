@@ -97,6 +97,31 @@ if __name__ == '__main__':
     parser.add_argument("--summary", dest="summary", action="store_true",
                         help="Print a summary of the mutations")
 
+    parser.add_argument("--processor", dest="processor",
+                        type=int,
+                        default=3,
+                        help="The number of processors used, affects the node cost")
+
+    parser.add_argument("--min-node-cost", dest="min_node_cost",
+                        type=int,
+                        default=1,
+                        help="the minimum amount of node cost, different for each processor")
+
+    parser.add_argument("--max-node-cost", dest="max_node_cost",
+                        type=int,
+                        default=100,
+                        help="the maximum amount of node cost, different for each processor")
+
+    parser.add_argument("--min-link-cost", dest="min_link_cost",
+                        type=int,
+                        default=1,
+                        help="the minimum amount of link cost")
+
+    parser.add_argument("--max-link-cost", dest="max_link_cost",
+                        type=int,
+                        default=50,
+                        help="the maximum amount of link cost")
+
     args = parser.parse_args()
     
     # Check there are no conflicts about how to generate the graph
@@ -128,11 +153,17 @@ if __name__ == '__main__':
                      args.dag,
                      use_lowercase,
                      None,
-                     output_directory)
+                     output_directory,
+                     args.processor,
+                     args.min_node_cost,
+                     args.max_node_cost,
+                     args.min_link_cost,
+                     args.max_link_cost)
     if args.load_graph:
         gc = GraphConfig(False, True, None, None, None,
                          None, False, args.load_graph,
-                         output_directory)
+                         output_directory,
+                         0, 0, 0, 0, 0)
 
     # Generate the first graph
     g1 = Graph(gc)
