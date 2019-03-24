@@ -37,7 +37,7 @@ GraphLink = namedtuple('GraphLink', ['orig', 'dest', 'cost'])
 
 
 class Graph:
-    def __find_root(self):
+    def find_root(self):
         """
         Find the root of the graph.
 
@@ -52,7 +52,7 @@ class Graph:
             orig, dest, cost = link
             orig_node = self.treelevels[orig.level][orig.block][orig.position]
             dest_node = self.treelevels[dest.level][dest.block][dest.position]
-            
+
             all_nodes.add(orig_node)
             all_nodes.add(dest_node)
             children.add(dest_node)
@@ -62,7 +62,7 @@ class Graph:
         root = all_nodes.difference(children)
         if not root:
             return ''
-        
+
         return root.pop()
             
     def __generate_file_name(self, ext, append_before_ext=''):
@@ -142,6 +142,7 @@ class Graph:
                     break
             if len(l):
                 result.append(l)
+
         return result
 
     # Deprecated method
@@ -173,9 +174,10 @@ class Graph:
                     l.append(pool.pop())
             if len(l):
                 result.append(l)
+
         return result
 
-    def __generate_treelevels(self, root, nodelists, depth):
+    def __generate_treelevels(self, root, exitNode, nodelists, depth):
         """
         Generate the levels of the the tree using the nodelists.
 
@@ -197,7 +199,7 @@ class Graph:
 
         return res + list(get_chunks(nodelists[1:],
                                      lists_per_level,
-                                     lists_per_level))
+                                     lists_per_level)) + [[[exitNode]]]
 
     def __normalize_treelevels(self):
         """
@@ -245,12 +247,15 @@ class Graph:
 
         # Process the root
         root = Position(0, 0, 0)
+        allSource = set()
+        allDest = set()
         for block, b in enumerate(self.treelevels[1]):
             for position, x in enumerate(b):
                 dest = Position(1, block, position)
+                allDest.add(dest)
                 tree_links.append(GraphLink(root, dest, 0))
 
-        for level, (x, y) in enumerate(get_chunks(self.treelevels[1:], 2),
+        for level, (x, y) in enumerate(get_chunks(self.treelevels[1:-1], 2),
                                        start=1):
             election_positions = []
             for block, b in enumerate(x):
@@ -264,6 +269,7 @@ class Graph:
                     sys.exit(0)
 
                 orig_position = election_positions.pop()
+                allSource.add(orig_position)
                 for dest_position, node in enumerate(block):
                     dest_position = Position(level + 1,
                                              dest_block,
@@ -271,6 +277,15 @@ class Graph:
                     tree_links.append(GraphLink(orig_position,
                                                 dest_position,
                                                 0))
+                    allDest.add(dest_position)
+
+        # Process exit node
+        exit_position = Position(level + 2, 0, 0)
+        for lastNode in allDest.difference(allSource):
+            tree_links.append(GraphLink(lastNode,
+                                        exit_position,
+                                        0))
+
 
         return tree_links
 
@@ -407,7 +422,7 @@ class Graph:
         d = self.to_python_dict()
 
         with open(file_name, 'w') as f:
-            f.write("root = '" + self.__find_root() + "'")
+            f.write("root = '" + self.find_root() + "'")
             f.write('\n')
             f.write('links = {\n')
             for k in d:
@@ -468,6 +483,8 @@ class Graph:
         # Select the root
         root = choice(pool_of_nodes)
         pool_of_nodes.remove(root)
+        exitNode = choice(pool_of_nodes)
+        pool_of_nodes.remove(exitNode)
 
         # Stablish the number of lists for each graph
         num_of_lists = (size - 1) / outdegree
@@ -475,7 +492,7 @@ class Graph:
         lists_of_nodes = self.__generate_nodelists(pool_of_nodes,
                                                    num_of_lists,
                                                    outdegree)
-        self.nodes = (root,) + tuple(chain.from_iterable(lists_of_nodes))
+        self.nodes = (root,) + tuple(chain.from_iterable(lists_of_nodes)) + (exitNode,)
         self.nodeCost = dict.fromkeys(node for node in self.nodes)
         for node in self.nodes:
             self.nodeCost[node] = tuple(randint(TreeConfig.min_node_cost, TreeConfig.max_node_cost)
@@ -486,10 +503,9 @@ class Graph:
             print "Number of nodes for the graph:", number_of_nodes, '/', size
             print
 
-        self.treelevels = self.__generate_treelevels(root,
+        self.treelevels = self.__generate_treelevels(root, exitNode,
                                                      lists_of_nodes,
                                                      depth)
-
         if DEBUG:
             print "Generated Lists:"
             for pos, x in enumerate(self.treelevels):
@@ -504,7 +520,6 @@ class Graph:
             print
 
         self.treelinks = self.__generate_treelinks()
-
         num_of_dag_links = 0
         if dag_density == "sparse":
             num_of_dag_links = len(self.treelevels) / 2
@@ -532,6 +547,7 @@ class Graph:
         # If you copy the graph (with deepcopy) to be mutated set this
         # variable to True to generate the filenames correctly
         self.mutated = False
+        self.processors = GraphConfig.processor_count
 
         # Choose the way to build the graph
         if GraphConfig.populate_randomly:

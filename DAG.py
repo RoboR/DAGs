@@ -8,4 +8,3 @@ class DAG(Graph):
 
     def __init__(self, GraphConfig):
         Graph.__init__(self, GraphConfig)
-        self.linkCost = list([0] * len(self.treelinks))
