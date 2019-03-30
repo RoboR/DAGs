@@ -24,19 +24,20 @@ GraphConfig = namedtuple("GraphConfig", ["populate_randomly",
                                          "min_link_cost",
                                          "max_link_cost"])
 
-"""
-Datatypes to represent the links of the graph, a position is a tuple of three
-element in which the first element represents the level of the graph, the
-second element represents the  block inside the level and the third one the
-position inside the block.
-A GraphLink is a tuple of two Positions the first one being the origin of the
-link and the second the end of the link.
-"""
-Position = namedtuple('Position', ['level', 'block', 'position'])
-GraphLink = namedtuple('GraphLink', ['orig', 'dest', 'cost'])
+
 
 
 class Graph:
+    """
+    Datatypes to represent the links of the graph, a position is a tuple of three
+    element in which the first element represents the level of the graph, the
+    second element represents the  block inside the level and the third one the
+    position inside the block.
+    A GraphLink is a tuple of two Positions the first one being the origin of the
+    link and the second the end of the link.
+    """
+    Position = namedtuple('Position', ['level', 'block', 'position'])
+    GraphLink = namedtuple('GraphLink', ['orig', 'dest', 'cost'])
     def find_root(self):
         """
         Find the root of the graph.
@@ -457,13 +458,13 @@ class Graph:
             orig = map(int, orig[1:-1].split(','))
             dest = map(int, dest[1:-1].split(','))
             cost = int(cost[1:-1])
-            l = GraphLink(Position(orig[0],
-                                   orig[1],
-                                   orig[2]),
-                          Position(dest[0],
-                                   dest[1],
-                                   dest[2]),
-                          cost)
+            l = Graph.GraphLink(Graph.Position(orig[0],
+                                               orig[1],
+                                               orig[2]),
+                                Graph.Position(dest[0],
+                                               dest[1],
+                                               dest[2]),
+                                cost)
             self.treelinks.append(l)
 
     def __populate_randomly(self, TreeConfig):

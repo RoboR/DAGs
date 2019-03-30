@@ -6,9 +6,9 @@ from graph import Graph, GraphConfig
 from DAG import DAG
 
 
-def traverseGraph(graphDict, node, targetNode, parent, path, includeNode=False):
+def TraverseGraph(graphDict, node, targetNode, parent, path, includeNode=False):
     for child in graphDict[node]:
-        traverseGraph(graphDict, child, targetNode, parent + node, path)
+        TraverseGraph(graphDict, child, targetNode, parent + node, path)
 
     if targetNode is node:
         p = parent
@@ -18,7 +18,7 @@ def traverseGraph(graphDict, node, targetNode, parent, path, includeNode=False):
             path.append(p)
 
 
-def reverse_dict(d, root):
+def ReverseDict(d, root):
     result = {}
     result[root] = []
 
@@ -29,19 +29,55 @@ def reverse_dict(d, root):
             result.get(val).append(key)
     return result
 
-def getExitPath(readGraph, currentNode):
+def GetExitPath(readGraph, currentNode):
     # Find the path from exit node to current node
-    reverseGraph = reverse_dict(readGraph.to_python_dict(), readGraph.find_root())
+    reverseGraph = ReverseDict(readGraph.to_python_dict(), readGraph.find_root())
     reverseLevel = readGraph.treelevels[::-1]
     path = list()
 
     for i in reverseLevel[0]:
         for j in i:
-            traverseGraph(reverseGraph, j, currentNode, '', path)
+            TraverseGraph(reverseGraph, j, currentNode, '', path)
 
     return path
 
-def calculateRankU(readGraph):
+def MaxiumumSuccesorCost(rankU, treeLevels, treelinks, paths, node):
+    oriPos = FindPositionInLink(treeLevels, node)
+    maxCost = 0
+
+    for succ in paths:
+        destNode = succ[-1]
+        succRank = 0
+        if rankU.get(destNode):
+            succRank = rankU[destNode]
+        else:
+            print('cant get', destNode, rankU)
+        destPos = FindPositionInLink(treeLevels, destNode)
+        cCost = FindCommunicationCost(treelinks, oriPos, destPos)
+
+        if (succRank + cCost) > maxCost:
+            maxCost = succRank + cCost
+
+    return maxCost
+
+def FindPositionInLink(treelevel, node):
+    for level in range(len(treelevel)):
+        for block in range(len(treelevel[level])):
+            for position in range(len(treelevel[level][block])):
+                curPos = Graph.Position(level, block, position)
+                if treelevel[level][block][position] is node:
+                    return curPos
+
+def FindCommunicationCost(treeLinks, oriPos, destPos):
+    for links in treeLinks:
+        if links.orig == oriPos and links.dest == destPos:
+            return links.cost
+
+def AverageWorkload(node):
+    avgW = int(math.ceil(sum(readGraph.nodeCost[node]) / 3.0))
+    return avgW
+
+def GetAllRankU(readGraph):
     rankU = dict()
     for n in readGraph.nodes:
         rankU[n] = []
@@ -50,25 +86,15 @@ def calculateRankU(readGraph):
     for lvl3 in reverseLevel:
         for lvl2 in lvl3:
             for lvl1 in lvl2:
-                avgW = int(math.ceil(sum(readGraph.nodeCost[lvl1]) / 3.0))
-
                 # Find max communication cost
-                path = getExitPath(readGraph, lvl1)
-                if path:
-                    highestRankU = 0
-
-                    for singlePath in path:
-                        childRankUNode = singlePath[-1]
-                        if rankU.get(childRankUNode):
-                            for proc in range(readGraph.processors):
-                                print(singlePath, type(singlePath), lvl1, childRankUNode, rankU[childRankUNode])
+                paths = GetExitPath(readGraph, lvl1)
+                if paths:
+                    maxSuccCost = MaxiumumSuccesorCost(rankU, readGraph.treelevels, readGraph.treelinks, paths, lvl1)
+                    rankU[lvl1] = AverageWorkload(lvl1) + maxSuccCost
                 else:
-                    rankU[lvl1] = avgW
-                    # print('not empty', path, lvl1)
-                    # for list(singlePath) in path:
-                    #     for node in
+                    rankU[lvl1] = AverageWorkload(lvl1)
 
-    print('rankU', rankU)
+    return rankU
 
 if __name__ == '__main__':
     print('Start DAG')
@@ -102,4 +128,6 @@ if __name__ == '__main__':
     print('LINKS', readGraph.treelinks)
     print('DICT', readGraph.to_python_dict())
 
-    calculateRankU(readGraph)
+
+    graphRankU = GetAllRankU(readGraph)
+    print('RANKU', graphRankU)
