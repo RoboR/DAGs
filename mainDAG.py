@@ -1,10 +1,15 @@
 import sys
 sys.path.insert(0, 'dag_generator')
 import math
+import operator
+from random import randint
+from collections import namedtuple
 
 from graph import Graph, GraphConfig
 from DAG import DAG
 
+
+TaskSlot = namedtuple('TaskSlot', ['application', 'task', 'startTime', 'endTime'])
 
 def TraverseGraph(graphDict, node, targetNode, parent, path, includeNode=False):
     for child in graphDict[node]:
@@ -16,7 +21,6 @@ def TraverseGraph(graphDict, node, targetNode, parent, path, includeNode=False):
             p = p + node
         if p:
             path.append(p)
-
 
 def ReverseDict(d, root):
     result = {}
@@ -96,6 +100,78 @@ def GetAllRankU(readGraph):
 
     return rankU
 
+def GetParentExecutingProcessor(taskSlot, parent):
+    proc = -1
+    endTime = -1
+    for pIdx in range(len(taskSlot)):
+        for task in taskSlot[pIdx]:
+            if task.task is parent:
+                proc = pIdx
+                endTime = task.endTime
+                break
+
+    return (proc, endTime)
+
+def GetMinIndexAndValue(itemList):
+    minIdx = -1
+    minVal = -1
+
+    for idx in range(len(itemList)):
+        if minVal < 0 or itemList[idx] < minVal:
+            minIdx = idx
+            minVal = itemList[idx]
+
+    return (minIdx, minVal)
+
+def FindEarliestStartTimeOfTask(taskSlot, pCount, parentNodes, node, nodeCost, treeLinks, treeLevels):
+    sTimeInEachProc = [0, 0, 0]
+
+    # Find earliest completion time of parents
+    parentEFT = [0, 0, 0]
+    if parentNodes:
+        # completion time of parent task in ith processor
+        for parent in parentNodes:
+            pProc, endTime = GetParentExecutingProcessor(taskSlot, parent)
+            if pProc >= 0:
+                for pIdx in range(pCount):
+                    cc = 0
+                    if pIdx is not pProc:
+                        cc = FindCommunicationCost(treeLinks,
+                                                   FindPositionInLink(treeLevels, parent),
+                                                   FindPositionInLink(readGraph.treelevels, node))
+                    parentEFT[pIdx] = max(parentEFT[pIdx], endTime + cc)
+
+    # Find slot to insert task
+    for pIdx in range(pCount):
+        prevEndTime = 0
+        for task in taskSlot[pIdx]:
+            endTime = prevEndTime + nodeCost[pIdx]
+            if endTime < task.startTime:
+                prevEndTime = endTime
+                break
+            else:
+                prevEndTime = task.endTime
+        sTimeInEachProc[pIdx] = max(prevEndTime, parentEFT[pIdx])
+
+    fTimeInEachProc = map(operator.add, sTimeInEachProc, list(nodeCost))
+    selProc, eft = GetMinIndexAndValue(fTimeInEachProc)
+
+    return (selProc, sTimeInEachProc[selProc], eft)
+
+def FindLowerBound(rankList, parentGraph, readGraph):
+    taskSlot = [[], [], []]
+    lowerBound = 0
+
+    for node, rank in rankList:
+        parentNodes = parentGraph[node]
+        sel, sTime, endTime = FindEarliestStartTimeOfTask(taskSlot, readGraph.processors,
+                                                          parentNodes, node, readGraph.nodeCost[node],
+                                                          readGraph.treelinks, readGraph.treelevels)
+        taskSlot[sel].append(TaskSlot(readGraph.id, node, sTime, endTime))
+        lowerBound = endTime
+
+    return lowerBound
+
 if __name__ == '__main__':
     print('Start DAG')
     load_graph = 'output/graph-DqnH-representation.txt'
@@ -130,4 +206,14 @@ if __name__ == '__main__':
 
 
     graphRankU = GetAllRankU(readGraph)
-    print('RANKU', graphRankU)
+    sortedRankU = sorted(graphRankU.items(), key=operator.itemgetter(1))
+    sortedRankU.reverse()
+    print('RANKU', sortedRankU)
+
+    parentGraph = ReverseDict(readGraph.to_python_dict(), readGraph.find_root())
+    lowerBound = FindLowerBound(sortedRankU, parentGraph, readGraph)
+    print('LOWERBOUND', lowerBound)
+
+    DEATH_LINE_MAX = 40
+    deathLine = randint(0, DEATH_LINE_MAX) + lowerBound
+    print('DEATHLINE', deathLine)
