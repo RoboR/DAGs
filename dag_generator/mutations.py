@@ -2,7 +2,7 @@ from itertools import chain
 from random import shuffle, choice, randint
 from string import ascii_lowercase, ascii_uppercase, digits
 
-from graph import Position, GraphLink
+from graph import Graph
 from utils import DEBUG
 
 

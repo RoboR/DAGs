@@ -22,7 +22,8 @@ GraphConfig = namedtuple("GraphConfig", ["populate_randomly",
                                          "min_node_cost",
                                          "max_node_cost",
                                          "min_link_cost",
-                                         "max_link_cost"])
+                                         "max_link_cost",
+                                         "dead_line"])
 
 
 
@@ -38,6 +39,7 @@ class Graph:
     """
     Position = namedtuple('Position', ['level', 'block', 'position'])
     GraphLink = namedtuple('GraphLink', ['orig', 'dest', 'cost'])
+
     def find_root(self):
         """
         Find the root of the graph.
@@ -247,21 +249,21 @@ class Graph:
         tree_links = []
 
         # Process the root
-        root = Position(0, 0, 0)
+        root = self.Position(0, 0, 0)
         allSource = set()
         allDest = set()
         for block, b in enumerate(self.treelevels[1]):
             for position, x in enumerate(b):
-                dest = Position(1, block, position)
+                dest = self.Position(1, block, position)
                 allDest.add(dest)
-                tree_links.append(GraphLink(root, dest, 0))
+                tree_links.append(self.GraphLink(root, dest, 0))
 
         for level, (x, y) in enumerate(get_chunks(self.treelevels[1:-1], 2),
                                        start=1):
             election_positions = []
             for block, b in enumerate(x):
                 for position, _ in enumerate(b):
-                    election_positions.append(Position(level, block, position))
+                    election_positions.append(self.Position(level, block, position))
             shuffle(election_positions)
 
             for dest_block, block in enumerate(y):
@@ -272,20 +274,16 @@ class Graph:
                 orig_position = election_positions.pop()
                 allSource.add(orig_position)
                 for dest_position, node in enumerate(block):
-                    dest_position = Position(level + 1,
-                                             dest_block,
-                                             dest_position)
-                    tree_links.append(GraphLink(orig_position,
-                                                dest_position,
-                                                0))
+                    dest_position = self.Position(level + 1,
+                                                  dest_block,
+                                                  dest_position)
+                    tree_links.append(self.GraphLink(orig_position, dest_position, 0))
                     allDest.add(dest_position)
 
         # Process exit node
-        exit_position = Position(level + 2, 0, 0)
+        exit_position = self.Position(level + 2, 0, 0)
         for lastNode in allDest.difference(allSource):
-            tree_links.append(GraphLink(lastNode,
-                                        exit_position,
-                                        0))
+            tree_links.append(self.GraphLink(lastNode, exit_position, 0))
 
 
         return tree_links
@@ -320,13 +318,9 @@ class Graph:
             # if dest_level == source_level + 1:
             #     continue
 
-            graph_link = GraphLink(Position(source_level,
-                                            source_block,
-                                            source_position),
-                                   Position(dest_level,
-                                            dest_block,
-                                            dest_position),
-                                   0)
+            graph_link = self.GraphLink(self.Position(source_level, source_block, source_position),
+                                        self.Position(dest_level, dest_block, dest_position),
+                                        0)
             # Check that the link doestn't exist already
             if graph_link in self.treelinks:
                 continue
@@ -363,7 +357,6 @@ class Graph:
         so it can be reloaded later.
         """
         file_name = self.__generate_file_name('txt', '-representation')
-
         with open(file_name, "w") as f:
             f.write('Graph {\n')
             f.write('\tId: ')
@@ -388,6 +381,12 @@ class Graph:
                                                                                  x.cost),
                                      self.treelinks))
             f.write(links_str)
+            f.write('\n')
+            f.write('\tLowerBound: ')
+            f.write(str(self.lowerbound))
+            f.write('\n')
+            f.write('\tDeadline: ')
+            f.write(str(self.deadline))
             f.write('\n')
             f.write('}')
 
@@ -448,6 +447,8 @@ class Graph:
             node_costs = f.readline().split('NodeCosts:')[1].strip()
             levels = f.readline().split(':')[1].strip()
             links = f.readline().split(':')[1].strip()
+            lowerbound = f.readline().split('LowerBound:')[1].strip()
+            deadline = f.readline().split('Deadline:')[1].strip()
 
         self.id = str(g_id)
         self.nodes = ast.literal_eval(nodes)
@@ -466,6 +467,8 @@ class Graph:
                                                dest[2]),
                                 cost)
             self.treelinks.append(l)
+        self.lowerbound = int(lowerbound)
+        self.deadline = int(deadline)
 
     def __populate_randomly(self, TreeConfig):
         """
@@ -536,10 +539,15 @@ class Graph:
         tempTreeLinks = self.treelinks
         self.treelinks = list()
         for i in range(len(tempTreeLinks)):
-            self.treelinks.append(GraphLink(tempTreeLinks[i].orig,
-                                            tempTreeLinks[i].dest,
-                                            randint(TreeConfig.min_link_cost, TreeConfig.max_link_cost)))
+            self.treelinks.append(self.GraphLink(tempTreeLinks[i].orig,
+                                                 tempTreeLinks[i].dest,
+                                                 randint(TreeConfig.min_link_cost, TreeConfig.max_link_cost)))
 
+    def set_deadline(self, deadline):
+        self.deadline = deadline
+
+    def set_lowerbound(self, lowerbound):
+        self.lowerbound = lowerbound
 
     def __init__(self, GraphConfig):
         # Data to to represent the graph
@@ -549,6 +557,8 @@ class Graph:
         # variable to True to generate the filenames correctly
         self.mutated = False
         self.processors = GraphConfig.processor_count
+        self.lowerbound = 0
+        self.deadline = 0
 
         # Choose the way to build the graph
         if GraphConfig.populate_randomly:

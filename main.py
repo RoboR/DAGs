@@ -1,8 +1,9 @@
-import argparse
 import sys
-
+sys.path.insert(0, 'dag_generator')
+import argparse
 from copy import deepcopy
 
+from DAG import DAG
 from graph import Graph, GraphConfig
 from mutations import MutateGraph
 
@@ -122,14 +123,19 @@ if __name__ == '__main__':
                         default=50,
                         help="the maximum amount of link cost")
 
+    parser.add_argument("--dead-line", dest="dead_line",
+                        type=int,
+                        default=50,
+                        help="the maximum deadline period starting from lowerbound")
+
     args = parser.parse_args()
     
-    # Check there are no conflicts about how to generate the graph
-    if (args.load_graph and (args.size or args.outdegree or args.depth or
-                             args.dag)):
-        print "Error: Specified to generate the graph randomly and also" +\
-              " to load it from a file"
-        sys.exit(0)
+    # # Check there are no conflicts about how to generate the graph
+    # if (args.load_graph and (args.size or args.outdegree or args.depth or
+    #                          args.dag)):
+    #     print "Error: Specified to generate the graph randomly and also" +\
+    #           " to load it from a file"
+    #     sys.exit(0)
 
     load_graph = None
     if args.load_graph:
@@ -158,15 +164,16 @@ if __name__ == '__main__':
                      args.min_node_cost,
                      args.max_node_cost,
                      args.min_link_cost,
-                     args.max_link_cost)
+                     args.max_link_cost,
+                     args.dead_line)
     if args.load_graph:
         gc = GraphConfig(False, True, None, None, None,
                          None, False, args.load_graph,
                          output_directory,
-                         0, 0, 0, 0, 0)
+                         0, 0, 0, 0, 0, 0)
 
     # Generate the first graph
-    g1 = Graph(gc)
+    g1 = DAG(gc)
 
     # Create a copy of the graph to mutate
     if mutate_graph:
