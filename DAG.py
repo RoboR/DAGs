@@ -33,12 +33,12 @@ def get_min_index_and_value(item_list):
     return min_idx, min_val
 
 
-def get_parent_executing_processor(task_slot, parent):
+def get_parent_executing_processor(task_slot, parent, app_id):
     processor = -1
     end_time = -1
     for pIdx in range(len(task_slot)):
         for task in task_slot[pIdx]:
-            if task.task is parent:
+            if task.application == app_id and task.task is parent:
                 processor = pIdx
                 end_time = task.endTime
                 break
@@ -53,6 +53,7 @@ class DAG(Graph):
         Graph.__init__(self, graph_config)
         self.priority = 0
         self.rank_u = self.__calculate_rank_u()
+
         if graph_config.populate_randomly:
             self.set_lowerbound(self.__find_lower_bound())
             self.set_deadline(randint(0, graph_config.dead_line) + self.lowerbound)
@@ -92,7 +93,7 @@ class DAG(Graph):
 
     def __traverse_graph(self, graph_dict, node, target_node, parent, path, include_node=False):
         for child in graph_dict[node]:
-            self.__traverse_graph(graph_dict, child, target_node, parent + node, path)
+            self.__traverse_graph(graph_dict, child, target_node, parent + ',' + node, path)
 
         if target_node is node:
             p = parent
@@ -106,7 +107,7 @@ class DAG(Graph):
         max_cost = 0
 
         for successor in paths:
-            dest_node = successor[-1]
+            dest_node = successor.split(',')[-1]
             succ_rank = 0
             if rank_u.get(dest_node):
                 succ_rank = rank_u[dest_node]
@@ -123,7 +124,7 @@ class DAG(Graph):
             for block in range(len(self.treelevels[level])):
                 for position in range(len(self.treelevels[level][block])):
                     cur_pos = Graph.Position(level, block, position)
-                    if self.treelevels[level][block][position] is node:
+                    if self.treelevels[level][block][position] == node:
                         return cur_pos
 
     def __find_communication_cost(self, ori_pos, dest_pos):
@@ -137,26 +138,26 @@ class DAG(Graph):
 
     def __find_lower_bound(self):
         reverse_graph = reverse_dict(self.to_python_dict(), self.find_root())
-        task_slot = [[], [], []]
+        task_slot = [[] for i in range(self.processors)]
         lower_bound = 0
 
         for node, rank in self.rank_u:
             parent_nodes = reverse_graph[node]
             processor, start_time, end_time = self.__find_earliest_start_time_of_task(task_slot, parent_nodes, node)
-            task_slot[processor].append(self.TaskSlot(self.id, node, start_time, end_time))
+            self.insert_to_task_slot_list_ascending(task_slot, processor, node, start_time, end_time)
             lower_bound = end_time
 
         return lower_bound
 
     def __find_earliest_start_time_of_task(self, task_slot, parent_nodes, node):
-        start_time = [0, 0, 0]
-
+        start_time = [0] * self.processors
         # Find earliest completion time of parents
-        parent_eft = [0, 0, 0]
+        parent_eft = [0] * self.processors
+
         if parent_nodes:
             # completion time of parent task in ith processor
             for parent in parent_nodes:
-                pproc, end_time = get_parent_executing_processor(task_slot, parent)
+                pproc, end_time = get_parent_executing_processor(task_slot, parent, self.id)
                 if pproc >= 0:
                     for pIdx in range(self.processors):
                         cc = 0
@@ -167,10 +168,11 @@ class DAG(Graph):
 
         # Find slot to insert task
         for pIdx in range(self.processors):
-            prev_end_time = 0
+            prev_end_time = parent_eft[pIdx]
             for task in task_slot[pIdx]:
-                end_time = prev_end_time + self.nodeCost[node][pIdx]
-                if end_time < task.startTime:
+                end_time = prev_end_time
+                if (end_time + self.nodeCost[node][pIdx]) < task.startTime and \
+                        (end_time + self.nodeCost[node][pIdx]) < task.endTime:
                     prev_end_time = end_time
                     break
                 else:
@@ -179,8 +181,27 @@ class DAG(Graph):
 
         finish_time = map(operator.add, start_time, list(self.nodeCost[node]))
         processor_sel, eft = get_min_index_and_value(finish_time)
+        # print('parent node', self.id, node, parent_nodes, parent_eft, start_time, finish_time)
 
         return processor_sel, start_time[processor_sel], eft
+
+    def insert_tasks_to_list(self, tasks_slot_list, node):
+        reverse_graph = reverse_dict(self.to_python_dict(), self.find_root())
+        parent_nodes = reverse_graph[node]
+
+        processor, start_time, end_time = self.__find_earliest_start_time_of_task(tasks_slot_list, parent_nodes, node)
+        self.insert_to_task_slot_list_ascending(tasks_slot_list, processor, node, start_time, end_time)
+
+    def insert_to_task_slot_list_ascending(self, taskslot_list, processor, node, start_time, end_time):
+        insert_index = -1
+        for i in range(len(taskslot_list[processor])):
+            t = taskslot_list[processor][i]
+            if start_time < t.startTime and end_time < t.endTime:
+                insert_index = i
+                break
+        if insert_index < 0:
+            insert_index = len(taskslot_list[processor])
+            taskslot_list[processor].insert(insert_index, self.TaskSlot(self.id, node, start_time, end_time))
 
     def set_application_priority(self, priority):
         self.priority = priority

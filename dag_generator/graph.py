@@ -362,6 +362,9 @@ class Graph:
             f.write('\tId: ')
             f.write(str(self.id))
             f.write('\n')
+            f.write('\tProcessors: ')
+            f.write(str(self.processors))
+            f.write('\n')
             f.write('\tNodes: ')
             f.write(str(self.nodes))
             f.write('\n')
@@ -443,6 +446,7 @@ class Graph:
         with open(file_name, 'r') as f:
             f.readline()
             g_id = f.readline().split(':')[1].strip()
+            processors = f.readline().split(':')[1].strip()
             nodes = f.readline().split(':')[1].strip()
             node_costs = f.readline().split('NodeCosts:')[1].strip()
             levels = f.readline().split(':')[1].strip()
@@ -451,6 +455,7 @@ class Graph:
             deadline = f.readline().split('Deadline:')[1].strip()
 
         self.id = str(g_id)
+        self.processors = int(processors)
         self.nodes = ast.literal_eval(nodes)
         self.nodeCost = ast.literal_eval(node_costs)
         self.treelevels = ast.literal_eval(levels)
@@ -472,7 +477,7 @@ class Graph:
 
     def __populate_randomly(self, TreeConfig):
         """
-        Constructor to build the graph using the 
+        Constructor to build the graph using the
         specified parameters.
         """
         # Check the TreeConfig
@@ -492,6 +497,8 @@ class Graph:
 
         # Stablish the number of lists for each graph
         num_of_lists = (size - 1) / outdegree
+
+        self.processors = TreeConfig.processor_count
 
         lists_of_nodes = self.__generate_nodelists(pool_of_nodes,
                                                    num_of_lists,
@@ -556,7 +563,6 @@ class Graph:
         # If you copy the graph (with deepcopy) to be mutated set this
         # variable to True to generate the filenames correctly
         self.mutated = False
-        self.processors = GraphConfig.processor_count
         self.lowerbound = 0
         self.deadline = 0
 
