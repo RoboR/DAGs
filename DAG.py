@@ -199,9 +199,10 @@ class DAG(Graph):
             if start_time < t.startTime and end_time < t.endTime:
                 insert_index = i
                 break
+
         if insert_index < 0:
             insert_index = len(taskslot_list[processor])
-            taskslot_list[processor].insert(insert_index, self.TaskSlot(self.id, node, start_time, end_time))
+        taskslot_list[processor].insert(insert_index, self.TaskSlot(self.id, node, start_time, end_time))
 
     def set_application_priority(self, priority):
         self.priority = priority

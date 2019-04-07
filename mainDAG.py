@@ -30,9 +30,12 @@ class FMHEFT:
         self.applicationCount += 1
 
     def find_makespan(self):
+        makespan_list = dict()
+
         # Put all tasks into task priority queue of applications according to descending order of rankU
         for app in self.applications:
             self.task_priority_queue.put((app, self.applications[app].rank_u))
+            makespan_list[self.applications[app].id] = 0
 
         while not self.task_priority_queue.empty():
             max_tasks = self.dequeue_task_of_all_application()
@@ -44,7 +47,12 @@ class FMHEFT:
                 slot = self.common_ready_queue.get()
                 self.applications[slot.app_priority].insert_tasks_to_list(self.task_allocation_queue, slot.task)
 
-        print(self.task_allocation_queue)
+        for processor_tasks in self.task_allocation_queue:
+            for task in processor_tasks:
+                if task.endTime > makespan_list[task.application]:
+                    makespan_list[task.application] = task.endTime
+
+        return makespan_list
 
     def dequeue_task_of_all_application(self):
         temp_queue = Queue()
@@ -77,14 +85,12 @@ if __name__ == '__main__':
                                 0, 0, 0, 0, 0, 0)
     DAG_a = DAG(task_a_config)
 
-    print(DAG_a.rank_u)
-    print(DAG_b.rank_u)
     f_mheft = FMHEFT(3)
     DAG_b.set_application_priority(1)
     DAG_a.set_application_priority(2)
     f_mheft.add_applications(DAG_a)
     f_mheft.add_applications(DAG_b)
-    f_mheft.find_makespan()
+    print(f_mheft.find_makespan())
 
     # graph_path_01 = 'output/graph-9JWu-representation.txt'
     # graph_path_02 = 'output/graph-f7I7-representation.txt'
