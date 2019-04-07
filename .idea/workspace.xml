@@ -42,8 +42,8 @@
           <file leaf-file-name="DAG.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/DAG.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="331">
-                  <caret line="183" column="16" lean-forward="false" selection-start-line="183" selection-start-column="10" selection-end-line="183" selection-end-column="16" />
+                <state relative-caret-position="677">
+                  <caret line="185" column="0" lean-forward="true" selection-start-line="185" selection-start-column="0" selection-end-line="185" selection-end-column="0" />
                   <folding />
                 </state>
               </provider>
@@ -56,8 +56,8 @@
           <file leaf-file-name="mainDAG.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/mainDAG.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="493">
-                  <caret line="86" column="0" lean-forward="true" selection-start-line="86" selection-start-column="0" selection-end-line="86" selection-end-column="0" />
+                <state relative-caret-position="-145">
+                  <caret line="132" column="25" lean-forward="false" selection-start-line="132" selection-start-column="25" selection-end-line="132" selection-end-column="25" />
                   <folding />
                 </state>
               </provider>
@@ -76,7 +76,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>endTime</find>
       <find>prevEndTime</find>
       <find>treelink</find>
       <find>cc</find>
@@ -106,6 +105,7 @@
       <find>__find_lower_bound</find>
       <find>__find_earliest_start_time_of_task</find>
       <find>print(</find>
+      <find>makespan_list</find>
     </findStrings>
     <replaceStrings>
       <replace />
@@ -662,16 +662,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/DAG.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="331">
-          <caret line="183" column="16" lean-forward="false" selection-start-line="183" selection-start-column="10" selection-end-line="183" selection-end-column="16" />
+        <state relative-caret-position="677">
+          <caret line="185" column="0" lean-forward="true" selection-start-line="185" selection-start-column="0" selection-end-line="185" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/mainDAG.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="493">
-          <caret line="86" column="0" lean-forward="true" selection-start-line="86" selection-start-column="0" selection-end-line="86" selection-end-column="0" />
+        <state relative-caret-position="-145">
+          <caret line="132" column="25" lean-forward="false" selection-start-line="132" selection-start-column="25" selection-end-line="132" selection-end-column="25" />
           <folding />
         </state>
       </provider>

@@ -38,7 +38,7 @@ class FMHEFT:
             makespan_list[self.applications[app].id] = 0
 
         while not self.task_priority_queue.empty():
-            max_tasks = self.dequeue_task_of_all_application()
+            max_tasks = self.__dequeue_task_priority_queue()
             for tasks in max_tasks:
                 common_slot = FMHEFT.CommonSlot(tasks[0], tasks[1][0])
                 self.common_ready_queue.put(common_slot)
@@ -54,7 +54,7 @@ class FMHEFT:
 
         return makespan_list
 
-    def dequeue_task_of_all_application(self):
+    def __dequeue_task_priority_queue(self):
         temp_queue = Queue()
         max_tasks = list()
 
@@ -68,6 +68,46 @@ class FMHEFT:
 
         self.task_priority_queue = temp_queue
         return max_tasks
+
+class WPMHEFT:
+    CommonSlot = namedtuple('CommonSlot', ['app_priority', 'task'])
+
+    def __init__(self, proccesor_count):
+        self.applications = dict()
+        self.applicationCount = 0
+
+        self.task_priority_queue = Queue()
+        self.application_priority_queue = Queue()
+        self.task_allocation_queue = [[] for i in range(proccesor_count)]
+
+    def add_applications(self, application):
+        if self.applications.get(application.priority):
+            print('same priority exists for %d' % application.priority)
+            return
+
+        self.applications[application.priority] = application
+        self.applicationCount += 1
+
+    def find_makespan(self):
+        makespan_list = dict()
+
+        # Put all tasks into task priority queue of applications according to descending order of rankU
+        for app in self.applications:
+            self.task_priority_queue.put(app)
+            makespan_list[self.applications[app].id] = 0
+
+        while not self.task_priority_queue.empty():
+            priority = self.task_priority_queue.get()
+            tasks_list = self.applications[priority].rank_u
+            for task, rank_u in tasks_list:
+                self.applications[priority].insert_tasks_to_list(self.task_allocation_queue, task)
+
+        for processor_tasks in self.task_allocation_queue:
+            for task in processor_tasks:
+                if task.endTime > makespan_list[task.application]:
+                    makespan_list[task.application] = task.endTime
+
+        return makespan_list
 
 
 if __name__ == '__main__':
@@ -85,12 +125,23 @@ if __name__ == '__main__':
                                 0, 0, 0, 0, 0, 0)
     DAG_a = DAG(task_a_config)
 
-    f_mheft = FMHEFT(3)
     DAG_b.set_application_priority(1)
     DAG_a.set_application_priority(2)
-    f_mheft.add_applications(DAG_a)
-    f_mheft.add_applications(DAG_b)
-    print(f_mheft.find_makespan())
+
+    # # F_MHEFT
+    # f_mheft = FMHEFT(3)
+    # f_mheft.add_applications(DAG_a)
+    # f_mheft.add_applications(DAG_b)
+    # print(f_mheft.find_makespan())
+
+
+    # WP_MHEFT
+    wp_mheft = WPMHEFT(3)
+    wp_mheft.add_applications(DAG_b)
+    wp_mheft.add_applications(DAG_a)
+    print(wp_mheft.find_makespan())
+    # print(DAG_a.rank_u)
+    # print(DAG_b.rank_u)
 
     # graph_path_01 = 'output/graph-9JWu-representation.txt'
     # graph_path_02 = 'output/graph-f7I7-representation.txt'

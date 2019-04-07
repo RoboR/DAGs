@@ -176,7 +176,8 @@ class DAG(Graph):
                     prev_end_time = end_time
                     break
                 else:
-                    prev_end_time = task.endTime
+                    if task.endTime > prev_end_time:
+                        prev_end_time = task.endTime
             start_time[pIdx] = max(prev_end_time, parent_eft[pIdx])
 
         finish_time = map(operator.add, start_time, list(self.nodeCost[node]))
