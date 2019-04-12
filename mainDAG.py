@@ -30,6 +30,8 @@ class FMHEFT:
         self.common_ready_queue = list()
         self.task_allocation_queue = [[] for i in range(proccesor_count)]
 
+        self.task_allocate_by_ppmheft = False
+
     def add_applications(self, application):
         if self.applications.get(application.priority):
             print('same priority exists for %d' % application.priority)
@@ -40,14 +42,39 @@ class FMHEFT:
 
     def set_allocated_tasks(self, task_allocation):
         self.task_allocation_queue = task_allocation
+        self.task_allocate_by_ppmheft = True
 
     def find_makespan(self):
         makespan_list = dict()
 
         # Put all tasks into task priority queue of applications according to descending order of rankU
-        for app in self.applications:
-            self.task_priority_queue.put((app, self.applications[app].rank_u))
-            makespan_list[self.applications[app].id] = 0
+        for app_priority in self.applications:
+            self.task_priority_queue.put((app_priority,
+                                          self.applications[app_priority].id,
+                                          self.applications[app_priority].rank_u))
+            makespan_list[self.applications[app_priority].id] = 0
+
+        # remove the allocated task from rank_u list
+        if self.task_allocate_by_ppmheft:
+            task_allocated = list()
+            for task_in_proc in self.task_allocation_queue:
+                for task in task_in_proc:
+                    if task:
+                        task_allocated.append(task)
+
+            priority_task_list = dict();
+            while not self.task_priority_queue.empty():
+                priority, app_id, tasks = self.task_priority_queue.get()
+                priority_task_list[app_id] = (priority, dict(tasks))
+
+            for task_slot in task_allocated:
+                if priority_task_list.get(task_slot.application):
+                    priority_task_list[task_slot.application][1].pop(task_slot.task)
+
+            for app_id, (priority, rank_u_list) in priority_task_list.items():
+                rank_u_items = sorted(rank_u_list.items(), key=operator.itemgetter(1), reverse=True)
+                if rank_u_items:
+                    self.task_priority_queue.put((priority, app_id, rank_u_items))
 
         while not self.task_priority_queue.empty():
             task_to_run_on_each_processor = self.__dequeue_task_priority_queue()
@@ -77,13 +104,13 @@ class FMHEFT:
         task_to_run_on_each_processor = list()
 
         while not self.task_priority_queue.empty():
-            app_priority, task_lists = self.task_priority_queue.get()
+            app_priority, app_id, task_lists = self.task_priority_queue.get()
             task_to_run_on_each_processor.append((app_priority, task_lists[0]))
 
             del task_lists[0]
 
             if task_lists:
-                temp_queue.put((app_priority, task_lists))
+                temp_queue.put((app_priority, app_id, task_lists))
 
         self.task_priority_queue = temp_queue
         return task_to_run_on_each_processor
@@ -148,6 +175,7 @@ class PPMHEFT:
         self.applicationCount += 1
 
     def find_makespan(self):
+        makespan_list = dict()
         rank_u_list = list()
         remaining_app_priority = list()
 
@@ -155,6 +183,7 @@ class PPMHEFT:
         for app_priority in self.applications:
             self.application_priority_queue.put(app_priority)
             remaining_app_priority.append(app_priority)
+            makespan_list[self.applications[app_priority].id] = 0
 
             # put all tasks into task_priority_queue according to descending order
             for task, rank_u in self.applications[app_priority].rank_u:
@@ -173,26 +202,42 @@ class PPMHEFT:
             while not app_m_scheduled:
                 # Probe fairly schedule app Gm and all the applications in low_application_set using F_MHEFT
                 fmheft = FMHEFT(self.processors)
-                task_alloc_queue_copy = copy.deepcopy(self.task_allocation_queue)
-                fmheft.set_allocated_tasks(task_alloc_queue_copy)
+                fmheft.set_allocated_tasks(copy.deepcopy(self.task_allocation_queue))
 
                 for app_priority in low_application_set:
                     fmheft.add_applications(copy.deepcopy(self.applications[app_priority]))
 
                 app_m_fair_makespan = fmheft.find_makespan()
-                # print('makespan fair', app_m_fair_makespan)
 
                 # F_MHEFT makespan meets deadline
-                if app_m_fair_makespan <= self.applications[app_m_priority].deadline:
+                app_m_makespan = app_m_fair_makespan[self.applications[app_m_priority].id]
+                if app_m_makespan <= self.applications[app_m_priority].deadline:
                     app_m_scheduled = True
                     self.task_allocation_queue = fmheft.task_allocation_queue
+                    remaining_app_priority.remove(app_m_priority)
+
+                    # checks remaining app met deadline, cancel the remaining app allocation if it does not meet
+                    all_scheduled = True
+                    for remain_priority in remaining_app_priority:
+                        remaining_app_makespan = app_m_fair_makespan[self.applications[remain_priority].id]
+                        if remaining_app_makespan > self.applications[remain_priority].deadline:
+                            all_scheduled = False
+                    if not all_scheduled:
+                        remaining_app_id = [self.applications[prio].id for prio in remaining_app_priority]
+
+                        temp_task_allocation_queue = [[] for i in range(self.processors)]
+                        for procIndex in range(self.processors):
+                            for task in self.task_allocation_queue[procIndex]:
+                                if task.application not in remaining_app_id:
+                                    temp_task_allocation_queue[procIndex].append(task)
+                        self.task_allocation_queue = temp_task_allocation_queue
 
                 # cancel previous allocation of F_MHEFT
                 else:
-                    print('insert eft', app_m_priority)
                     # get highest rank u task of app Gm
                     priority_q_temp = Queue()
                     task_m = None
+
                     while not self.task_priority_queue.empty():
                         # get first task of app Gm in task_priority_queue
                         task_slot = self.task_priority_queue.get()
@@ -200,11 +245,11 @@ class PPMHEFT:
                             task_m = task_slot
                         else:
                             priority_q_temp.put(task_slot)
-                    print(task_m)
 
                     # all task for app_m has scheduled
                     if not task_m:
                         app_m_scheduled = True
+                        remaining_app_priority.remove(app_m_priority)
                     self.task_priority_queue = priority_q_temp
 
                     # insert with insertion-based policy
@@ -212,7 +257,13 @@ class PPMHEFT:
                         app_m = copy.deepcopy(self.applications[task_m.app_priority])
                         app_m.insert_tasks_to_list(self.task_allocation_queue, task_m.task)
 
-        print(self.task_allocation_queue)
+        for processor_tasks in self.task_allocation_queue:
+            for task in processor_tasks:
+                if task.endTime > makespan_list[task.application]:
+                    makespan_list[task.application] = task.endTime
+
+        return makespan_list
+
 
 if __name__ == '__main__':
     print('Start DAG')

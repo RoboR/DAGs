@@ -171,7 +171,7 @@ class DAG(Graph):
             prev_end_time = parent_eft[pIdx]
             for task in task_slot[pIdx]:
                 end_time = prev_end_time
-                if (end_time + self.nodeCost[node][pIdx]) < task.startTime and \
+                if (end_time + self.nodeCost[node][pIdx]) <= task.startTime and \
                         (end_time + self.nodeCost[node][pIdx]) < task.endTime:
                     prev_end_time = end_time
                     break
