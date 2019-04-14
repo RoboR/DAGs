@@ -110,7 +110,8 @@ class Graph:
         elif size <= len(letters) + len(digits):
             return letters + list(digits)
         else:
-            return range(1, size)
+            # return range(1, size)
+            return [str(i) for i in range(1, size)]
 
     def __generate_nodelists(self, nodes, num_lists, average_size, dispersion=1):
         """
@@ -198,6 +199,7 @@ class Graph:
         lists_per_level = (len(nodelists) - 1) / (depth - 2)
         if lists_per_level <= 0:
             print "Warning::The specified depth is too big"
+            self.valid_graph = False
             lists_per_level = 1
 
         return res + list(get_chunks(nodelists[1:],
@@ -284,7 +286,6 @@ class Graph:
         exit_position = self.Position(level + 2, 0, 0)
         for lastNode in allDest.difference(allSource):
             tree_links.append(self.GraphLink(lastNode, exit_position, 0))
-
 
         return tree_links
 
@@ -442,7 +443,6 @@ class Graph:
         """
         nodes = levels = links = g_id = None
         self.treelinks = list()
-
         with open(file_name, 'r') as f:
             f.readline()
             g_id = f.readline().split(':')[1].strip()
@@ -565,6 +565,7 @@ class Graph:
         self.mutated = False
         self.lowerbound = 0
         self.deadline = 0
+        self.valid_graph = True
 
         # Choose the way to build the graph
         if GraphConfig.populate_randomly:

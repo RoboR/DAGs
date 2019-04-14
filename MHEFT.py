@@ -29,6 +29,7 @@ class FMHEFT:
         self.task_priority_queue = Queue()
         self.common_ready_queue = list()
         self.task_allocation_queue = [[] for i in range(proccesor_count)]
+        self.makespan = None
 
         self.task_allocate_by_ppmheft = False
 
@@ -97,6 +98,7 @@ class FMHEFT:
                 if not makespan_list.get(task.application) or task.endTime > makespan_list[task.application]:
                     makespan_list[task.application] = task.endTime
 
+        self.makespan = makespan_list
         return makespan_list
 
     def __dequeue_task_priority_queue(self):
@@ -116,6 +118,20 @@ class FMHEFT:
         return task_to_run_on_each_processor
 
 
+    def get_result(self):
+        result = None
+        if self.makespan:
+            result = "F_MHEFT\n" + "Applications : " + str(len(self.applications)) + "\n"
+            for app_prio in self.applications:
+                app = self.applications[app_prio]
+                result += "app: " + str(app.id) + "; app priority: " + str(app_prio) \
+                          + "; nodes: " + str(len(app.nodes)) \
+                          + "; lowerbound: " + str(app.lowerbound) + "; deadline: " + str(app.deadline) + '\n'
+            result += "makespan: " + str(self.makespan) + "\n"
+
+        return result
+
+
 class WPMHEFT:
     def __init__(self, proccesor_count):
         self.applications = dict()
@@ -124,6 +140,8 @@ class WPMHEFT:
         self.task_priority_queue = list()
         self.application_priority_queue = Queue()
         self.task_allocation_queue = [[] for i in range(proccesor_count)]
+
+        self.makespan = None
 
     def add_applications(self, application):
         if self.applications.get(application.priority):
@@ -151,7 +169,21 @@ class WPMHEFT:
                 if task.endTime > makespan_list[task.application]:
                     makespan_list[task.application] = task.endTime
 
+        self.makespan = makespan_list
         return makespan_list
+
+    def get_result(self):
+        result = None
+        if self.makespan:
+            result = "WP_MHEFT\n" + "Applications : " + str(len(self.applications)) + "\n"
+            for app_prio in self.applications:
+                app = self.applications[app_prio]
+                result += "app: " + str(app.id) + "; app priority: " + str(app_prio) \
+                          + "; nodes: " + str(len(app.nodes)) \
+                          + "; lowerbound: " + str(app.lowerbound) + "; deadline: " + str(app.deadline) + '\n'
+            result += "makespan: " + str(self.makespan) + "\n"
+
+        return result
 
 
 class PPMHEFT:
@@ -165,6 +197,7 @@ class PPMHEFT:
         self.task_priority_queue = Queue()
         self.application_priority_queue = Queue()
         self.task_allocation_queue = [[] for i in range(proccesor_count)]
+        self.makespan = None
 
     def add_applications(self, application):
         if self.applications.get(application.priority):
@@ -262,7 +295,21 @@ class PPMHEFT:
                 if task.endTime > makespan_list[task.application]:
                     makespan_list[task.application] = task.endTime
 
+        self.makespan = makespan_list
         return makespan_list
+
+    def get_result(self):
+        result = None
+        if self.makespan:
+            result = "PP_MHEFT\n" + "Applications : " + str(len(self.applications)) + "\n"
+            for app_prio in self.applications:
+                app = self.applications[app_prio]
+                result += "app: " + str(app.id) + "; app priority: " + str(app_prio) \
+                          + "; nodes: " + str(len(app.nodes)) \
+                          + "; lowerbound: " + str(app.lowerbound) + "; deadline: " + str(app.deadline) + '\n'
+            result += "makespan: " + str(self.makespan) + "\n"
+
+        return result
 
 
 if __name__ == '__main__':
@@ -293,6 +340,9 @@ if __name__ == '__main__':
     DAG_2.set_application_priority(2)
     DAG_3.set_application_priority(3)
 
+    # DAG_1.set_processor_count(2)
+    # DAG_2.set_processor_count(2)
+    # DAG_3.set_processor_count(2)
     # F_MHEFT
     fmheft_paper = FMHEFT(3)
     fmheft_paper.add_applications(copy.deepcopy(DAG_1))

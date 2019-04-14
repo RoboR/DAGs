@@ -93,7 +93,7 @@ class DAG(Graph):
 
     def __traverse_graph(self, graph_dict, node, target_node, parent, path, include_node=False):
         for child in graph_dict[node]:
-            self.__traverse_graph(graph_dict, child, target_node, parent + ',' + node, path)
+            self.__traverse_graph(graph_dict, child, target_node, str(parent) + ',' + str(node), path)
 
         if target_node is node:
             p = parent
@@ -133,7 +133,7 @@ class DAG(Graph):
                 return links.cost
 
     def __average_workload(self, node):
-        avg_w = int(math.ceil(sum(self.nodeCost[node]) / 3.0))
+        avg_w = int(math.ceil(sum(self.nodeCost[node][:self.processors]) / self.processors))
         return avg_w
 
     def __find_lower_bound(self):
@@ -180,7 +180,7 @@ class DAG(Graph):
                         prev_end_time = task.endTime
             start_time[pIdx] = max(prev_end_time, parent_eft[pIdx])
 
-        finish_time = map(operator.add, start_time, list(self.nodeCost[node]))
+        finish_time = map(operator.add, start_time, list(self.nodeCost[node][:self.processors]))
         processor_sel, eft = get_min_index_and_value(finish_time)
         # print('parent node', self.id, node, parent_nodes, parent_eft, start_time, finish_time)
 
@@ -207,3 +207,8 @@ class DAG(Graph):
 
     def set_application_priority(self, priority):
         self.priority = priority
+
+    def set_processor_count(self, processors):
+        self.processors = processors
+        self.rank_u = self.__calculate_rank_u()
+        self.set_lowerbound(self.__find_lower_bound())
