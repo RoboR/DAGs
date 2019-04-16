@@ -19,6 +19,9 @@ def check_tasks_is_in_queue(tasks_queue, application, targetTask):
     return found
 
 
+ScheduleResult = namedtuple('ScheduleResult', ['id', 'priority', 'lowerbound', 'deadline', 'makespan'])
+
+
 class FMHEFT:
     CommonSlot = namedtuple('CommonSlot', ['app_priority', 'task', 'rank_u'])
 
@@ -30,7 +33,7 @@ class FMHEFT:
         self.common_ready_queue = list()
         self.task_allocation_queue = [[] for i in range(proccesor_count)]
         self.makespan = None
-
+        self.schedule_result = dict()
         self.task_allocate_by_ppmheft = False
 
     def add_applications(self, application):
@@ -99,6 +102,12 @@ class FMHEFT:
                     makespan_list[task.application] = task.endTime
 
         self.makespan = makespan_list
+
+        for app_prio in self.applications:
+            app = self.applications[app_prio]
+            self.schedule_result[app.id] = (ScheduleResult(app.id, app.priority, app.lowerbound,
+                                                           app.deadline, makespan_list[app.id]))
+
         return makespan_list
 
     def __dequeue_task_priority_queue(self):
@@ -122,12 +131,25 @@ class FMHEFT:
         result = None
         if self.makespan:
             result = "F_MHEFT\n" + "Applications : " + str(len(self.applications)) + "\n"
+            miss_deadline = 0
+            overall_lateness = 0
+            total_makespan = 0
             for app_prio in self.applications:
                 app = self.applications[app_prio]
+                sched_res = self.schedule_result[app.id]
+                lateness = round(float(sched_res.makespan - sched_res.deadline) / float(sched_res.deadline), 4)
+                overall_lateness += lateness
+                if lateness > 0:
+                    miss_deadline += 1
+                if sched_res.makespan > total_makespan:
+                    total_makespan = sched_res.makespan
                 result += "app: " + str(app.id) + "; app priority: " + str(app_prio) \
                           + "; nodes: " + str(len(app.nodes)) \
-                          + "; lowerbound: " + str(app.lowerbound) + "; deadline: " + str(app.deadline) + '\n'
-            result += "makespan: " + str(self.makespan) + "\n"
+                          + "; lowerbound: " + str(app.lowerbound) + "; deadline: " + str(app.deadline) \
+                          + "; makespan: " + str(sched_res.makespan) + "; lateness: " + str(lateness) + "\n"
+            deadline_miss_ratio = round(float(miss_deadline) / float(len(self.applications)), 2)
+            result += "DMRs: " + str(deadline_miss_ratio) + "; overall lateness: " + str(overall_lateness) + \
+                      "; total makespan: " + str(total_makespan) + "\n"
 
         return result
 
@@ -140,8 +162,8 @@ class WPMHEFT:
         self.task_priority_queue = list()
         self.application_priority_queue = Queue()
         self.task_allocation_queue = [[] for i in range(proccesor_count)]
-
         self.makespan = None
+        self.schedule_result = dict()
 
     def add_applications(self, application):
         if self.applications.get(application.priority):
@@ -170,18 +192,36 @@ class WPMHEFT:
                     makespan_list[task.application] = task.endTime
 
         self.makespan = makespan_list
+        for app_prio in self.applications:
+            app = self.applications[app_prio]
+            self.schedule_result[app.id] = (ScheduleResult(app.id, app.priority, app.lowerbound,
+                                                           app.deadline, makespan_list[app.id]))
+
         return makespan_list
 
     def get_result(self):
         result = None
         if self.makespan:
-            result = "WP_MHEFT\n" + "Applications : " + str(len(self.applications)) + "\n"
+            result = "F_MHEFT\n" + "Applications : " + str(len(self.applications)) + "\n"
+            miss_deadline = 0
+            overall_lateness = 0
+            total_makespan = 0
             for app_prio in self.applications:
                 app = self.applications[app_prio]
+                sched_res = self.schedule_result[app.id]
+                lateness = round(float(sched_res.makespan - sched_res.deadline) / float(sched_res.deadline), 4)
+                overall_lateness += lateness
+                if lateness > 0:
+                    miss_deadline += 1
+                if sched_res.makespan > total_makespan:
+                    total_makespan = sched_res.makespan
                 result += "app: " + str(app.id) + "; app priority: " + str(app_prio) \
                           + "; nodes: " + str(len(app.nodes)) \
-                          + "; lowerbound: " + str(app.lowerbound) + "; deadline: " + str(app.deadline) + '\n'
-            result += "makespan: " + str(self.makespan) + "\n"
+                          + "; lowerbound: " + str(app.lowerbound) + "; deadline: " + str(app.deadline) \
+                          + "; makespan: " + str(sched_res.makespan) + "; lateness: " + str(lateness) + "\n"
+            deadline_miss_ratio = round(float(miss_deadline) / float(len(self.applications)), 2)
+            result += "DMRs: " + str(deadline_miss_ratio) + "; overall lateness: " + str(overall_lateness) + \
+                      "; total makespan: " + str(total_makespan) + "\n"
 
         return result
 
@@ -198,6 +238,7 @@ class PPMHEFT:
         self.application_priority_queue = Queue()
         self.task_allocation_queue = [[] for i in range(proccesor_count)]
         self.makespan = None
+        self.schedule_result = dict()
 
     def add_applications(self, application):
         if self.applications.get(application.priority):
@@ -296,18 +337,36 @@ class PPMHEFT:
                     makespan_list[task.application] = task.endTime
 
         self.makespan = makespan_list
+        for app_prio in self.applications:
+            app = self.applications[app_prio]
+            self.schedule_result[app.id] = (ScheduleResult(app.id, app.priority, app.lowerbound,
+                                                           app.deadline, makespan_list[app.id]))
+
         return makespan_list
 
     def get_result(self):
         result = None
         if self.makespan:
             result = "PP_MHEFT\n" + "Applications : " + str(len(self.applications)) + "\n"
+            miss_deadline = 0
+            overall_lateness = 0
+            total_makespan = 0
             for app_prio in self.applications:
                 app = self.applications[app_prio]
+                sched_res = self.schedule_result[app.id]
+                lateness = round(float(sched_res.makespan - sched_res.deadline) / float(sched_res.deadline), 4)
+                overall_lateness += lateness
+                if lateness > 0:
+                    miss_deadline += 1
+                if sched_res.makespan > total_makespan:
+                    total_makespan = sched_res.makespan
                 result += "app: " + str(app.id) + "; app priority: " + str(app_prio) \
                           + "; nodes: " + str(len(app.nodes)) \
-                          + "; lowerbound: " + str(app.lowerbound) + "; deadline: " + str(app.deadline) + '\n'
-            result += "makespan: " + str(self.makespan) + "\n"
+                          + "; lowerbound: " + str(app.lowerbound) + "; deadline: " + str(app.deadline) \
+                          + "; makespan: " + str(sched_res.makespan) + "; lateness: " + str(lateness) + "\n"
+            deadline_miss_ratio = round(float(miss_deadline) / float(len(self.applications)), 2)
+            result += "DMRs: " + str(deadline_miss_ratio) + "; overall lateness: " + str(overall_lateness) + \
+                      "; total makespan: " + str(total_makespan) + "\n"
 
         return result
 
@@ -340,9 +399,6 @@ if __name__ == '__main__':
     DAG_2.set_application_priority(2)
     DAG_3.set_application_priority(3)
 
-    # DAG_1.set_processor_count(2)
-    # DAG_2.set_processor_count(2)
-    # DAG_3.set_processor_count(2)
     # F_MHEFT
     fmheft_paper = FMHEFT(3)
     fmheft_paper.add_applications(copy.deepcopy(DAG_1))
