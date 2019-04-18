@@ -202,7 +202,7 @@ class WPMHEFT:
     def get_result(self):
         result = None
         if self.makespan:
-            result = "F_MHEFT\n" + "Applications : " + str(len(self.applications)) + "\n"
+            result = "WP_MHEFT\n" + "Applications : " + str(len(self.applications)) + "\n"
             miss_deadline = 0
             overall_lateness = 0
             total_makespan = 0

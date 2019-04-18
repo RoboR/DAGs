@@ -43,7 +43,7 @@ APPLICATION_NO_USED = [2, 3, 4, 6, 8, 10, 15, 20]
 
 ANALYZE_TIMES_PER_COMBINATION = 5
 
-OUTPUT_FOLDER = 'output_02'
+OUTPUT_FOLDER = 'output_03'
 
 def check_task_depth_outdegree_is_valid(tasks, depth, outdegree):
     validity = True
@@ -94,7 +94,7 @@ def generate_data():
                         comm_min = int(TASK_COST_MIN * comm_cost_ratio / 100)
                         comm_max = int(TASK_COST_MAX * comm_cost_ratio / 100)
 
-                        for times in range(ANALYZE_TIMES_PER_COMBINATION):
+                        for times in range(GENERATE_TIMES_PER_COMBINATION):
                             print("generating task size of {}, depth of {}, outdegree of {}, "
                                   "comm ratio of {}. {} times".
                                   format(task_size, depth, outdegree, comm_cost_ratio, times + 1))
@@ -134,7 +134,7 @@ def analyze_data():
     # COMM RATIO
     comm_directory = ["comm_ratio_" + str(ratio) for ratio in COMM_COST_RATIO]
 
-    report_path = os.getcwd() + "/report_02.txt"
+    report_path = os.getcwd() + "/report_03.txt"
     f = open(report_path, "w")
     if not f:
         print('unable to write to file', report_path)
