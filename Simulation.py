@@ -9,7 +9,7 @@ from MHEFT import FMHEFT, WPMHEFT, PPMHEFT
 
 # Generate
 DEADLINE = 50  # this can be change dynamically after loading
-PROCESSOR_NUMBER = 20  # this can be change dynamically after loading
+PROCESSOR_NUMBER = 48  # this can be change dynamically after loading, max num of processor
 
 TASK_NUMBER_MIN = 10
 TASK_NUMBER_MAX = 50
@@ -20,30 +20,20 @@ OUTDEGREE_MIN = 1
 OUTDEGREE_MAX = 5
 
 # ratio of comm cost to task computation
-# COMM_COST_RATIO_MIN = 20
-# COMM_COST_RATIO_MAX = 100   # debug
-# COMM_COST_RATIO_STEP = 20
 COMM_COST_RATIO = [20]
 
 TASK_COST_MIN = 10
 TASK_COST_MAX = 100
 
-GENERATE_TIMES_PER_COMBINATION = 10
+GENERATE_TIMES_PER_COMBINATION = 5
 
 # Analyze
-# PROCESSOR_NO_START = 2
-# PROCESSOR_NO_END = 20    # debug
-PROCESSOR_NO_USED = [2, 3, 4, 8, 10]
-
+PROCESSOR_NO_USED = [2, 4, 8, 16, 32, 48]
 DEADLINE_RANGE = [5, 10, 20, 30, 40, 50]
-
-# APPLICATION_NO_MIN = 2
-# APPLICATION_NO_MAX = 10  # debug
-APPLICATION_NO_USED = [2, 3, 4, 6, 8, 10, 15, 20]
-
+APPLICATION_NO_USED = [5, 10, 30, 40, 50, 60, 70]
 ANALYZE_TIMES_PER_COMBINATION = 5
 
-OUTPUT_FOLDER = 'output_03'
+OUTPUT_FOLDER = 'output_paper'
 
 def check_task_depth_outdegree_is_valid(tasks, depth, outdegree):
     validity = True
@@ -117,12 +107,13 @@ def generate_data():
                                 os.mkdir(comm_cost_dir)
 
                             fat_index = get_fat_index(gg.get_dag().treelevels)
-                            fat_dir = comm_cost_dir + "/fat_" + str(fat_index)
+                            if fat_index >= 0.0:
+                                fat_dir = comm_cost_dir + "/FAT_" + str(fat_index)
 
-                            if not os.path.exists(fat_dir):
-                                os.mkdir(fat_dir)
+                                if not os.path.exists(fat_dir):
+                                    os.mkdir(fat_dir)
 
-                            gg.store_dag(fat_dir)
+                                gg.store_dag(fat_dir)
 
     print('total files', count)
 
@@ -134,7 +125,7 @@ def analyze_data():
     # COMM RATIO
     comm_directory = ["comm_ratio_" + str(ratio) for ratio in COMM_COST_RATIO]
 
-    report_path = os.getcwd() + "/report_03.txt"
+    report_path = os.getcwd() + "/report_paper.txt"
     f = open(report_path, "w")
     if not f:
         print('unable to write to file', report_path)
@@ -225,6 +216,6 @@ def analyze_data():
 
 
 if __name__ == '__main__':
-    # generate_data()
+    generate_data()
 
-    analyze_data()
+    # analyze_data()
