@@ -406,6 +406,7 @@ if __name__ == '__main__':
     fmheft_paper.add_applications(copy.deepcopy(DAG_3))
     makespan_fmheft = fmheft_paper.find_makespan()
     print(makespan_fmheft)
+    print(fmheft_paper.task_allocation_queue)
 
     # WP_MHEFT
     wpmheft_paper = WPMHEFT(3)
@@ -414,6 +415,7 @@ if __name__ == '__main__':
     wpmheft_paper.add_applications(copy.deepcopy(DAG_3))
     makespan_wpmheft = wpmheft_paper.find_makespan()
     print(makespan_wpmheft)
+    print(wpmheft_paper.task_allocation_queue)
 
     # PP_MHEFT
     ppmheft_paper = PPMHEFT(3)
@@ -422,3 +424,4 @@ if __name__ == '__main__':
     ppmheft_paper.add_applications(copy.deepcopy(DAG_3))
     makespan_ppmheft_paper = ppmheft_paper.find_makespan()
     print(makespan_ppmheft_paper)
+    print(ppmheft_paper.task_allocation_queue)
