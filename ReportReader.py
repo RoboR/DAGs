@@ -208,30 +208,44 @@ if __name__ == '__main__':
                                 result += str(currentResult.wpheft_result.dmr) + '\t'
                                 result += str(currentResult.ppmheft_result.dmr) + '\t'
 
+                                # first 3 priority task has meet deadline
+                                result += str("\t".join(map(str, currentResult.fheft_result.deadline_met[:3]))) + '\t'
+                                result += str("\t".join(map(str, currentResult.wpheft_result.deadline_met[:3]))) + '\t'
+                                result += str("\t".join(map(str, currentResult.ppmheft_result.deadline_met[:3]))) + '\t'
+
                                 # make span
                                 result += str(currentResult.fheft_result.total_makespan) + '\t'
                                 result += str(currentResult.wpheft_result.total_makespan) + '\t'
                                 result += str(currentResult.ppmheft_result.total_makespan) + '\t'
 
-                                # overall lateness
-                                result += str(currentResult.fheft_result.overall_lateness) + '\t'
-                                result += str(currentResult.wpheft_result.overall_lateness) + '\t'
-                                result += str(currentResult.ppmheft_result.overall_lateness) + '\t'
+                                # RLM
+                                min_makespan = min(currentResult.fheft_result.total_makespan,
+                                                   currentResult.wpheft_result.total_makespan,
+                                                   currentResult.ppmheft_result.total_makespan)
 
-                                result += str(fmheft_lateness_min) + '\t'
-                                result += str(fmheft_lateness_max) + '\t'
-                                result += str(fmheft_lateness_avg) + '\t'
-                                result += str(wpmheft_lateness_min) + '\t'
-                                result += str(wpmheft_lateness_max) + '\t'
-                                result += str(wpmheft_lateness_avg) + '\t'
-                                result += str(ppmheft_lateness_min) + '\t'
-                                result += str(ppmheft_lateness_max) + '\t'
-                                result += str(ppmheft_lateness_avg) + '\t'
+                                result += str(float(currentResult.fheft_result.total_makespan)
+                                              / float(min_makespan)) + '\t'
+                                result += str(float(currentResult.wpheft_result.total_makespan)
+                                              / float(min_makespan)) + '\t'
+                                result += str(float(currentResult.ppmheft_result.total_makespan)
+                                              / float(min_makespan)) + '\t'
 
-                                # first 3 priority task has meet deadline
-                                result += str("\t".join(map(str, currentResult.fheft_result.deadline_met[:3]))) + '\t'
-                                result += str("\t".join(map(str, currentResult.wpheft_result.deadline_met[:3]))) + '\t'
-                                result += str("\t".join(map(str, currentResult.ppmheft_result.deadline_met[:3]))) + '\t'
+                                # # overall lateness
+                                # result += str(currentResult.fheft_result.overall_lateness) + '\t'
+                                # result += str(currentResult.wpheft_result.overall_lateness) + '\t'
+                                # result += str(currentResult.ppmheft_result.overall_lateness) + '\t'
+                                #
+                                # result += str(fmheft_lateness_min) + '\t'
+                                # result += str(fmheft_lateness_max) + '\t'
+                                # result += str(fmheft_lateness_avg) + '\t'
+                                # result += str(wpmheft_lateness_min) + '\t'
+                                # result += str(wpmheft_lateness_max) + '\t'
+                                # result += str(wpmheft_lateness_avg) + '\t'
+                                # result += str(ppmheft_lateness_min) + '\t'
+                                # result += str(ppmheft_lateness_max) + '\t'
+                                # result += str(ppmheft_lateness_avg) + '\t'
+
+
                                 print(result)
 
                         result_data_line_index = (result_data_line_index + 1) % RESULT_DATA_SIZE
