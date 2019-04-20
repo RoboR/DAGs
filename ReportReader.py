@@ -15,7 +15,7 @@ class ResultData:
     AppResult = namedtuple('AppResult',
                            ['id', 'priority', 'nodes_no', 'lowerbound', 'deadline', 'makespan', 'lateness'])
     MHEFTResult = namedtuple('MHEFTResult',
-                             ['dmr', 'overall_lateness', 'total_makespan'])
+                             ['dmr', 'overall_lateness', 'total_makespan', 'deadline_met'])
 
     def __init__(self):
         self.comm_ratio = 0
@@ -52,7 +52,6 @@ if __name__ == '__main__':
 
     RESULT_DATA_SIZE = len(RESULT_DATA_REPRESENTATION)
     result_data_line_index = 0
-
     currentResult = None
 
     FILTER_FAT_RATIO_LIST = ["fat_1.0", "fat_2.0", "fat_3.0", "fat_4.0"]
@@ -64,18 +63,13 @@ if __name__ == '__main__':
         for get_app_num in FILTER_APPLICATION_NO_LIST:
             for get_procc_num in FILTER_PROCESSOR_NO_LIST:
                 for get_deadline_num in FILTER_DEADLINE_RATIO_LIST:
-                    report_file = os.getcwd() + '/report_03.txt'
+                    report_file = os.getcwd() + '/report_test.txt'
                     fp = open(report_file, 'r')
 
                     title = get_fat_ratio + '\t' \
                             + str(get_app_num) + '\t' \
                             + str(get_procc_num) + '\t' \
                             + str(get_deadline_num)
-                    # title = "FAT RATIO : " + get_fat_ratio + '\t' \
-                    #         "APPLICATION NO : " + str(get_app_num) + '\t' \
-                    #         "PROCESSOR NO : " + str(get_procc_num) + '\t' \
-                    #         "DEADLINE RATIO : " + str(get_deadline_num)
-                    # print(title)
 
                     while True:
                         line = fp.readline()
@@ -107,21 +101,42 @@ if __name__ == '__main__':
                             dmr = float(fheft_summary_data[0].split(':')[1].strip())
                             overal_lateness = float(fheft_summary_data[1].split(':')[1].strip())
                             total_makespan = int(fheft_summary_data[2].split(':')[1].strip())
-                            currentResult.fheft_result = ResultData.MHEFTResult(dmr, overal_lateness, total_makespan)
+                            deadline_met = [0 for i in range(currentResult.application_no)]
+                            for app in currentResult.fheft_applications:
+                                if app.makespan <= app.deadline:
+                                    deadline_met[app.priority - 1] = 1
+                            currentResult.fheft_result = ResultData.MHEFTResult(dmr,
+                                                                                overal_lateness,
+                                                                                total_makespan,
+                                                                                deadline_met)
 
                         elif RESULT_DATA_REPRESENTATION[result_data_line_index] == 'WPMHEFT_SUMMARY':
-                            fheft_summary_data = line.split(';')
-                            dmr = float(fheft_summary_data[0].split(':')[1].strip())
-                            overal_lateness = float(fheft_summary_data[1].split(':')[1].strip())
-                            total_makespan = int(fheft_summary_data[2].split(':')[1].strip())
-                            currentResult.wpheft_result = ResultData.MHEFTResult(dmr, overal_lateness, total_makespan)
+                            wpheft_summary_data = line.split(';')
+                            dmr = float(wpheft_summary_data[0].split(':')[1].strip())
+                            overal_lateness = float(wpheft_summary_data[1].split(':')[1].strip())
+                            total_makespan = int(wpheft_summary_data[2].split(':')[1].strip())
+                            deadline_met = [0 for i in range(currentResult.application_no)]
+                            for app in currentResult.wpheft_applications:
+                                if app.makespan <= app.deadline:
+                                    deadline_met[app.priority - 1] = 1
+                            currentResult.wpheft_result = ResultData.MHEFTResult(dmr,
+                                                                                 overal_lateness,
+                                                                                 total_makespan,
+                                                                                 deadline_met)
 
                         elif RESULT_DATA_REPRESENTATION[result_data_line_index] == 'PPMHEFT_SUMMARY':
-                            fheft_summary_data = line.split(';')
-                            dmr = float(fheft_summary_data[0].split(':')[1].strip())
-                            overal_lateness = float(fheft_summary_data[1].split(':')[1].strip())
-                            total_makespan = int(fheft_summary_data[2].split(':')[1].strip())
-                            currentResult.ppmheft_result = ResultData.MHEFTResult(dmr, overal_lateness, total_makespan)
+                            ppheft_summary_data = line.split(';')
+                            dmr = float(ppheft_summary_data[0].split(':')[1].strip())
+                            overal_lateness = float(ppheft_summary_data[1].split(':')[1].strip())
+                            total_makespan = int(ppheft_summary_data[2].split(':')[1].strip())
+                            deadline_met = [0 for i in range(currentResult.application_no)]
+                            for app in currentResult.ppheft_applications:
+                                if app.makespan <= app.deadline:
+                                    deadline_met[app.priority - 1] = 1
+                            currentResult.ppmheft_result = ResultData.MHEFTResult(dmr,
+                                                                                  overal_lateness,
+                                                                                  total_makespan,
+                                                                                  deadline_met)
 
                         elif RESULT_DATA_REPRESENTATION[result_data_line_index] == 'FMHEFT_APPLICATION_HEADER':
                             app_remain_to_read = int(line.split(':')[1].strip())
@@ -136,7 +151,7 @@ if __name__ == '__main__':
 
                             for app in range(app_remain_to_read):
                                 app_line = fp.readline().strip()
-                                convert_line_to_app_result(app_line)
+                                res = convert_line_to_app_result(app_line)
                                 currentResult.wpheft_applications.append(res)
 
                         elif RESULT_DATA_REPRESENTATION[result_data_line_index] == 'PPMHEFT_APPLICATION_HEADER':
@@ -144,7 +159,7 @@ if __name__ == '__main__':
 
                             for app in range(app_remain_to_read):
                                 app_line = fp.readline().strip()
-                                convert_line_to_app_result(app_line)
+                                res = convert_line_to_app_result(app_line)
                                 currentResult.ppheft_applications.append(res)
 
                         elif RESULT_DATA_REPRESENTATION[result_data_line_index] == 'NEXT_DATA_LINE':
@@ -212,6 +227,11 @@ if __name__ == '__main__':
                                 result += str(ppmheft_lateness_min) + '\t'
                                 result += str(ppmheft_lateness_max) + '\t'
                                 result += str(ppmheft_lateness_avg) + '\t'
+
+                                # first 3 priority task has meet deadline
+                                result += str("\t".join(map(str, currentResult.fheft_result.deadline_met[:3]))) + '\t'
+                                result += str("\t".join(map(str, currentResult.wpheft_result.deadline_met[:3]))) + '\t'
+                                result += str("\t".join(map(str, currentResult.ppmheft_result.deadline_met[:3]))) + '\t'
                                 print(result)
 
                         result_data_line_index = (result_data_line_index + 1) % RESULT_DATA_SIZE
