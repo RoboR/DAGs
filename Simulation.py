@@ -31,7 +31,7 @@ GENERATE_TIMES_PER_COMBINATION = 5
 PROCESSOR_NO_USED = [2, 4, 8, 16, 32, 48]
 DEADLINE_RANGE = [5, 10, 20, 30, 40, 50]
 APPLICATION_NO_USED = [5, 10, 30, 40, 50, 60, 70]
-ANALYZE_TIMES_PER_COMBINATION = 5
+ANALYZE_TIMES_PER_COMBINATION = 10
 
 OUTPUT_FOLDER = 'output_paper'
 
@@ -125,7 +125,7 @@ def analyze_data():
     # COMM RATIO
     comm_directory = ["comm_ratio_" + str(ratio) for ratio in COMM_COST_RATIO]
 
-    report_path = os.getcwd() + "/report_paper.txt"
+    report_path = os.getcwd() + "/report_paper_fat4.0.txt"
     f = open(report_path, "w")
     if not f:
         print('unable to write to file', report_path)
@@ -136,6 +136,7 @@ def analyze_data():
 
         # FAT RATIO
         fat_directories = os.listdir(comm_full_dir)
+        fat_directories = ["fat_4.0"]
         for fat_dir in fat_directories:
             fat_full_path = comm_full_dir + '/' + fat_dir
             # APPLICATION NO IN USE
@@ -216,6 +217,6 @@ def analyze_data():
 
 
 if __name__ == '__main__':
-    generate_data()
+    # generate_data()
 
-    # analyze_data()
+    analyze_data()

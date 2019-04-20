@@ -55,9 +55,9 @@ if __name__ == '__main__':
 
     currentResult = None
 
-    FILTER_FAT_RATIO_LIST = ["fat_1.0", "fat_2.0", "fat_3.0"]
-    FILTER_APPLICATION_NO_LIST = [2, 3, 4, 6, 8, 10, 15, 20]
-    FILTER_PROCESSOR_NO_LIST = [2, 3, 4, 8, 10]
+    FILTER_FAT_RATIO_LIST = ["fat_1.0", "fat_2.0", "fat_3.0", "fat_4.0"]
+    FILTER_APPLICATION_NO_LIST = [5, 10, 30, 40, 50, 60, 70]
+    FILTER_PROCESSOR_NO_LIST = [2, 4, 8, 16, 32, 48]
     FILTER_DEADLINE_RATIO_LIST = [5, 10, 20, 30, 40, 50]
 
     for get_fat_ratio in FILTER_FAT_RATIO_LIST:
