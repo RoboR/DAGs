@@ -374,21 +374,21 @@ class PPMHEFT:
 if __name__ == '__main__':
     print('Start DAG')
 
-    task_1_path = 'output/task-1.txt'
+    task_1_path = 'output/task-1.dag'
     task_1_config = GraphConfig(False, True, None, None, None,
                                 None, False, task_1_path,
                                 'output',
                                 0, 0, 0, 0, 0, 0)
     DAG_1 = DAG(task_1_config)
 
-    task_2_path = 'output/task-2.txt'
+    task_2_path = 'output/task-2.dag'
     task_2_config = GraphConfig(False, True, None, None, None,
                                 None, False, task_2_path,
                                 'output',
                                 0, 0, 0, 0, 0, 0)
     DAG_2 = DAG(task_2_config)
 
-    task_3_path = 'output/task-3.txt'
+    task_3_path = 'output/task-3.dag'
     task_3_config = GraphConfig(False, True, None, None, None,
                                 None, False, task_3_path,
                                 'output',

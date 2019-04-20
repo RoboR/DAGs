@@ -357,7 +357,7 @@ class Graph:
         This function stores a convinient representation of the graph
         so it can be reloaded later.
         """
-        file_name = self.__generate_file_name('txt', '-representation')
+        file_name = self.__generate_file_name('dag', '-representation')
         with open(file_name, "w") as f:
             f.write('Graph {\n')
             f.write('\tId: ')
